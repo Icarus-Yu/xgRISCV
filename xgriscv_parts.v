@@ -1,3 +1,5 @@
+`ifndef XGRISCV_PARTS_V
+`define XGRISCV_PARTS_V
 //=====================================================================
 //
 // Designer   : Yili Gong
@@ -148,9 +150,10 @@ module imm (
 	input	[4:0]			 immctrl,
 
 	output	reg [`XLEN-1:0] 	immout);
+  //localparam XLEN_MINUS_12 = `XLEN - 12;
   always  @(*)
 	 case (immctrl)
-		`IMM_CTRL_ITYPE:	immout <= {{{`XLEN-12}{iimm[11]}}, iimm[11:0]};
+		`IMM_CTRL_ITYPE:	immout <= {{(`XLEN-12){iimm[11]}}, iimm[11:0]};
 		`IMM_CTRL_UTYPE:	immout <= {uimm[19:0], 12'b0};
 		default:			      immout <= `XLEN'b0;
 	 endcase
@@ -190,3 +193,4 @@ module ampattern (input [1:0] addr, input [1:0] swhb, output reg [3:0] amp); //a
     default: amp <= 4'b1111;// it shouldn't happen
   endcase
 endmodule
+`endif // XGRISCV_PARTS_V

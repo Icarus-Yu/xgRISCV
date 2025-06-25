@@ -9,6 +9,7 @@
 // ====================================================================
 
 `include "xgriscv_defines.v"
+`include "xgriscv_parts.v"
 
 module datapath(
 	input                    clk, reset,
