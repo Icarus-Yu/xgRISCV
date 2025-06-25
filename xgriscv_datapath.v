@@ -8,7 +8,7 @@
 // The datapath of the pipeline.
 // ====================================================================
 `ifndef XGRISCV_DATAPATH_V
-`define XGRISCV_DATAPATH_V//±¨´í½â¾ö
+`define XGRISCV_DATAPATH_V//Â±Â¨Â´Ã­Â½Ã¢Â¾Ã¶
 
 `include "xgriscv_defines.v"
 `include "xgriscv_parts.v"

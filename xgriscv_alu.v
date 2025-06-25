@@ -9,7 +9,7 @@
 //
 // ====================================================================
 `ifndef XGRISCV_ALU_V
-`define XGRISCV_ALU_V//±¨´í½â¾ö
+`define XGRISCV_ALU_V//Â±Â¨Â´Ã­Â½Ã¢Â¾Ã¶
 `include "xgriscv_defines.v"
 module alu(
 	input	[`XLEN-1:0]	a, b, 

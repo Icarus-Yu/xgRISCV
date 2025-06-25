@@ -1,10 +1,10 @@
-#生成仿真文件
+#鐢熸垚浠跨湡鏂囦欢
 iverilog -o my_simulation xgriscv_*.v
-#运行仿真文件
+#杩愯浠跨湡鏂囦欢
 vvp my_simulation
-#展示波形
+#灞曠ず娉㈠舰
 gtkwave wave.vcd
 
 `ifndef XGRISCV_PARTS_V
-`define XGRISCV_PARTS_V//报错解决
+`define XGRISCV_PARTS_V//鎶ラ敊瑙ｅ喅
 `endif // XGRISCV_PARTS_V
