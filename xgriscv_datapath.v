@@ -7,10 +7,13 @@
 // In spring 2021
 // The datapath of the pipeline.
 // ====================================================================
+`ifndef XGRISCV_DATAPATH_V
+`define XGRISCV_DATAPATH_V//±¨´í½â¾ö
 
 `include "xgriscv_defines.v"
 `include "xgriscv_parts.v"
-
+`include "xgriscv_alu.v"
+`include "xgriscv_regfile.v"
 module datapath(
 	input                    clk, reset,
 
@@ -154,3 +157,4 @@ module datapath(
 	assign waddrW = rdW;
 
 endmodule
+`endif // XGRISCV_PARTS_V

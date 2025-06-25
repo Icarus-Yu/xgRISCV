@@ -1,0 +1,10 @@
+#生成仿真文件
+iverilog -o my_simulation xgriscv_*.v
+#运行仿真文件
+vvp my_simulation
+#展示波形
+gtkwave wave.vcd
+
+`ifndef XGRISCV_PARTS_V
+`define XGRISCV_PARTS_V//报错解决
+`endif // XGRISCV_PARTS_V

@@ -8,7 +8,8 @@
 // The alu module implements the core's ALU.
 //
 // ====================================================================
-
+`ifndef XGRISCV_ALU_V
+`define XGRISCV_ALU_V//±¨´í½â¾ö
 `include "xgriscv_defines.v"
 module alu(
 	input	[`XLEN-1:0]	a, b, 
@@ -52,4 +53,4 @@ module alu(
 	assign lt = aluout[`XLEN-1];
 	assign ge = ~aluout[`XLEN-1];
 endmodule
-
+`endif 

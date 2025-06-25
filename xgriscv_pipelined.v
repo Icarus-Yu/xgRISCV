@@ -8,8 +8,11 @@
 // The overall of the pipelined xg-riscv implementation.
 //
 // ====================================================================
-
+`include "xgriscv_parts.v"
 `include "xgriscv_defines.v"
+`include "xgriscv_controller.v"
+`include "xgriscv_datapath.v"
+`include "xgriscv_mem.v"
 module xgriscv_pipeline(
   input                   clk, reset,
   output[`ADDR_SIZE-1:0]  pcW);

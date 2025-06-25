@@ -8,6 +8,8 @@
 // The instruction memory and data memory.
 //
 // ====================================================================
+`ifndef XGRISCV_MEM_V
+`define XGRISCV_MEM_V//报错解决
 
 `include "xgriscv_defines.v"
 
@@ -41,3 +43,4 @@ module dmem(input           	         clk, we,
         /**********************************************************************/
   	  end
 endmodule
+`endif // XGRISCV_PARTS_V

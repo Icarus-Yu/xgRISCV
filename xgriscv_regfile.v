@@ -8,7 +8,8 @@
 // The regfile module implements the core's general purpose registers file.
 //
 // ====================================================================
-
+`ifndef XGRISCV_REGFILE_V
+`define XGRISCV_REGFILE_V
 `include "xgriscv_defines.v"
 
 module regfile(
@@ -44,3 +45,4 @@ module regfile(
   assign rd1 = (ra1 != 0) ? rf[ra1] : 0;
   assign rd2 = (ra2 != 0) ? rf[ra2] : 0;
 endmodule
+`endif

@@ -8,7 +8,8 @@
 // The controller module generates the controlling signals.
 //
 // ====================================================================
-
+`ifndef XGRISCV_CONTROLLER_V
+`define XGRISCV_CONTROLLER_V//±¨´í½â¾ö
 `include "xgriscv_defines.v"
 
 module controller(
@@ -131,3 +132,4 @@ module controller(
 	 endcase
 
 endmodule
+`endif 
