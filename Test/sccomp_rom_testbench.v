@@ -68,28 +68,28 @@ module sccomp_rom_testbench();
     end
 
 endmodule
-```
 
-### 主要修改说明
 
-1.  **添加了波形生成代码**：这是最重要的修改。
-    ```verilog
-    initial begin
-        $dumpfile("waveform.vcd");
-        $dumpvars(0, uut);
-    end
-    ```
-    * `$dumpfile("waveform.vcd");`：告诉仿真器，请创建一个名为 `waveform.vcd` 的文件来存储波形数据。
-    * `$dumpvars(0, uut);`：告诉仿真器，请记录 `uut`（也就是我们的 `sccomp` 模块）以及它内部所有层级的所有信号的变化。没有这一行，波形文件将是空的。
+// --- 模块定义 ---### 主要修改说明
 
-2.  **完善了输入信号连接**：
-    * 我将 `reg_sel` 输入改为了连接到 `sw_i` 的低5位（`sw_i[4:0]`），这更符合您原始设计中通过开关选择寄存器的意图。
-    * `sw_i` 本身被定义为一个固定的 `wire`，在基础仿真中，我们让它保持为0。
-### 下一步
+// 1.  **添加了波形生成代码**：这是最重要的修改。
+//     ```verilog
+//     initial begin
+//         $dumpfile("waveform.vcd");
+//         $dumpvars(0, uut);
+//     end
+//     ```
+//     * `$dumpfile("waveform.vcd");`：告诉仿真器，请创建一个名为 `waveform.vcd` 的文件来存储波形数据。
+//     * `$dumpvars(0, uut);`：告诉仿真器，请记录 `uut`（也就是我们的 `sccomp` 模块）以及它内部所有层级的所有信号的变化。没有这一行，波形文件将是空的。
 
-现在，您已经拥有了所有进行仿真所需的文件：
-1.  您所有的CPU源文件，包括 `sccomp.v`、`PipelineCPU.v`、`dm.v` 等。
-2.  修改后用于仿真的 `sccomp.v`。
-3.  行为级ROM模型 `instruction_memory.v`。
-4.  这个最终版的测试平台 `sccomp_rom_testbench.v`。
-5.  包含机器码的 `instructions.txt` 文件。
+// 2.  **完善了输入信号连接**：
+//     * 我将 `reg_sel` 输入改为了连接到 `sw_i` 的低5位（`sw_i[4:0]`），这更符合您原始设计中通过开关选择寄存器的意图。
+//     * `sw_i` 本身被定义为一个固定的 `wire`，在基础仿真中，我们让它保持为0。
+// ### 下一步
+
+// 现在，您已经拥有了所有进行仿真所需的文件：
+// 1.  您所有的CPU源文件，包括 `sccomp.v`、`PipelineCPU.v`、`dm.v` 等。
+// 2.  修改后用于仿真的 `sccomp.v`。
+// 3.  行为级ROM模型 `instruction_memory.v`。
+// 4.  这个最终版的测试平台 `sccomp_rom_testbench.v`。
+// 5.  包含机器码的 `instructions.txt` 文件。

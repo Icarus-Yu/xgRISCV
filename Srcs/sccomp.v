@@ -75,7 +75,7 @@ module sccomp(clk, rstn, reg_sel, reg_data, instr, PC_out, mem_addr_out, mem_dat
 
    // 实例化用于仿真的行为级指令存储器
    instruction_memory U_instruction_memory (
-      .addr(PC[8:2]),   // input: rom address (7-bit)
+      .addr(PC),   // input: rom address (7-bit)
       .dout(instr)      // output: instruction (32-bit)
    );
    // ------------------- 修改部分结束 -------------------
@@ -83,12 +83,12 @@ module sccomp(clk, rstn, reg_sel, reg_data, instr, PC_out, mem_addr_out, mem_dat
    assign debug_data = debug_data_wire;
 
 endmodule
-```
+// ```
 
-### 主要修改说明
+// ### 主要修改说明
 
-我将原代码中对 `dist_mem_gen_0` 的实例化部分注释掉了，并替换为对我们之前创建的 `instruction_memory` 模块的实例化。
+// 我将原代码中对 `dist_mem_gen_0` 的实例化部分注释掉了，并替换为对我们之前创建的 `instruction_memory` 模块的实例化。
 
-* **端口连接**：
-    * 指令存储器的地址输入 `addr` 仍然连接到 `PC[8:2]`，这是一个7位的地址，用于从128条指令中选择。
-    * 指令存储器的数据输出 `dout` 连接到 `instr` 信号线，将读取到的指令送入CPU。
+// * **端口连接**：
+//     * 指令存储器的地址输入 `addr` 仍然连接到 `PC[8:2]`，这是一个7位的地址，用于从128条指令中选择。
+//     * 指令存储器的数据输出 `dout` 连接到 `instr` 信号线，将读取到的指令送入CPU。

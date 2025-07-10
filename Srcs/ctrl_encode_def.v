@@ -5,9 +5,9 @@
 `define NPC_JALR    3'b100
 
 // ALU control signal
-`define ALU_NOP     5'b00000 
+`define ALU_NOP     5'b00000
 `define ALU_ADD     5'b00001
-`define ALU_SUB     5'b00010 
+`define ALU_SUB     5'b00010
 `define ALU_AND     5'b00011
 `define ALU_OR      5'b00100
 `define ALU_XOR     5'b00101
@@ -101,4 +101,10 @@
 `define FUNCT7_SUB     7'b0100000
 `define FUNCT7_SRL     7'b0000000
 `define FUNCT7_SRA     7'b0100000
+
+`define DM_WORD             3'b000
+`define DM_HALFWORD         3'b001
+`define DM_HALFWORD_UNSIGNED 3'b010
+`define DM_BYTE             3'b011
+`define DM_BYTE_UNSIGNED    3'b100
 
