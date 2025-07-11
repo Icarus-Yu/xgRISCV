@@ -25,20 +25,20 @@ module HazardDetectionUnit(
     // 检测是否为分支指令
     wire is_branch_EX;
     assign is_branch_EX = (opcode_EX == `OPCODE_BRANCH); // BRANCH opcode
-    
+
     // 检测是否为JAL指令
     wire is_jal_ID;
     assign is_jal_ID = (opcode_ID == `OPCODE_JAL); // JAL opcode
-    
+
     // 检测是否为JALR指令
     wire is_jalr_EX;
     assign is_jalr_EX = (opcode_EX == `OPCODE_JALR); // JALR opcode
-    
+
     always @(*) begin
         // Load-Use冒险检测逻辑
         // 当EX阶段是Load指令且目标寄存器与ID阶段的源寄存器相同时会发生冒险
         // 此处处理的是Load与接下来第一条指令的冒险
-        if (MemRead_EX && 
+        if (MemRead_EX &&
             ((rd_EX == rs1_ID && rs1_ID != 5'b0) ||    // EX阶段目标寄存器与ID阶段rs1相同
              (rd_EX == rs2_ID && rs2_ID != 5'b0))) begin // EX阶段目标寄存器与ID阶段rs2相同
             stall_IF = 1'b1;  // 暂停PC和IF/ID寄存器
@@ -113,7 +113,7 @@ module ForwardingUnit(
         else
             // 没有数据依赖，不需要转发
             forward_rs1_EX = 2'b00;  // 不转发，使用寄存器堆中的数据
-            
+
         // EX阶段rs2的转发逻辑（与rs1类似）
         if (RegWrite_MEM && rd_MEM != 5'b0 && rd_MEM == rs2_EX)
             // 如果MEM阶段写寄存器且目标寄存器与EX阶段的rs2相同
@@ -133,11 +133,11 @@ module ForwardingUnit(
             forward_rs1_ID = 1'b1;  // 从WB阶段转发数据
         else
             forward_rs1_ID = 1'b0;  // 不转发，使用寄存器堆中的数据
-            
+
         // ID阶段rs2的转发逻辑
         if (RegWrite_WB && rd_WB != 5'b0 && rd_WB == rs2_ID)
             forward_rs2_ID = 1'b1;  // 从WB阶段转发数据
         else
             forward_rs2_ID = 1'b0;  // 不转发，使用寄存器堆中的数据
     end
-endmodule 
+endmodule

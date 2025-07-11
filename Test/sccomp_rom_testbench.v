@@ -1,8 +1,8 @@
 // =================================================================
 // sccomp_rom_testbench.v
 //
-// 用于sccomp模块的测试平台。
-// 这个版本添加了生成VCD波形文件的功能。
+// 最终调试版 - 专注于流水线流动与写回(WB)阶段验证。
+// 这个版本记录了追踪指令、验证写回和PC值所需的最关键信号。
 // =================================================================
 `timescale 1ns/1ps
 
@@ -10,11 +10,6 @@ module sccomp_rom_testbench();
     // --- 信号定义 ---
     reg clk;
     reg rstn;
-
-    // 模拟FPGA上的开关输入。
-    // 在这里，我们暂时将其固定为一个值，例如0。
-    // 在仿真时，您可以根据需要强制修改它的值来测试不同功能。
-    wire [15:0] sw_i = 16'b0;
 
     // 连接到被测模块(uut)的输出信号
     wire [31:0] reg_data;
@@ -44,52 +39,42 @@ module sccomp_rom_testbench();
     initial clk = 0;
     always #5 clk = ~clk;
 
-    // --- 波形文件生成 (关键修改) ---
+    // --- 波形文件生成 ---
     initial begin
-        // 指定生成的波形文件的名称为 "waveform.vcd"
         $dumpfile("waveform.vcd");
-        // $dumpvars(0, uut) 会记录模块 uut 以及其内部所有子模块的信号变化
-        $dumpvars(0, uut);
+
+        // 全局信号
+        $dumpvars(1, sccomp_rom_testbench.clk);
+        $dumpvars(1, sccomp_rom_testbench.rstn);
+
+        // 关键的流水线信号，用于追踪指令流动
+        $dumpvars(1, uut.U_PipelineCPU.PC_IF);//当前PC地址
+        $dumpvars(1, uut.instr);//当前指令
+        $dumpvars(1, uut.U_PipelineCPU.if_id_reg.instr_out);
+        $dumpvars(1, uut.U_PipelineCPU.id_ex_reg.instr_out);
+        $dumpvars(1, uut.U_PipelineCPU.ex_mem_reg.instr_out);
+
+        // --- 用于验证WB阶段操作的"五要素" ---
+        $dumpvars(1, uut.U_PipelineCPU.mem_wb_reg.PC_out);             // 0. 这条指令的原始PC地址是？ (新增)
+        $dumpvars(1, uut.U_PipelineCPU.mem_wb_reg.instr_out);          // 1. 到达WB阶段的指令是？
+        $dumpvars(1, uut.U_PipelineCPU.RegWrite_WB);                   // 2. 是否要写寄存器？
+        $dumpvars(1, uut.U_PipelineCPU.rd_addr_WB);                    // 3. 要写的寄存器地址是？
+        $dumpvars(1, uut.U_PipelineCPU.wb_data_WB);                    // 4. 要写入的数据是？
+
+        // 冒险与控制信号
+        $dumpvars(1, uut.U_PipelineCPU.hazard_detection_unit.stall_IF);
+        $dumpvars(1, uut.U_PipelineCPU.hazard_detection_unit.flush_ID);
+        $dumpvars(1, uut.U_PipelineCPU.hazard_detection_unit.flush_EX);
     end
 
     // --- 测试流程控制 ---
     initial begin
-        // 1. 初始化并施加复位信号
-        rstn = 0; // 初始时，施加低电平有效的复位
-        #20;      // 持续20ns
-        rstn = 1; // 撤销复位，CPU开始从0地址执行指令
-
-        // 2. 运行足够长的时间以完成测试程序
-        #40000; // 运行40000ns (4000个时钟周期)
-
-        // 3. 结束仿真
+        rstn = 0;// 开始20秒进复位操作
+        #20;
+        rstn = 1;
+        #40000;
         $display("Simulation Finished.");
         $stop;
     end
 
 endmodule
-
-
-// --- 模块定义 ---### 主要修改说明
-
-// 1.  **添加了波形生成代码**：这是最重要的修改。
-//     ```verilog
-//     initial begin
-//         $dumpfile("waveform.vcd");
-//         $dumpvars(0, uut);
-//     end
-//     ```
-//     * `$dumpfile("waveform.vcd");`：告诉仿真器，请创建一个名为 `waveform.vcd` 的文件来存储波形数据。
-//     * `$dumpvars(0, uut);`：告诉仿真器，请记录 `uut`（也就是我们的 `sccomp` 模块）以及它内部所有层级的所有信号的变化。没有这一行，波形文件将是空的。
-
-// 2.  **完善了输入信号连接**：
-//     * 我将 `reg_sel` 输入改为了连接到 `sw_i` 的低5位（`sw_i[4:0]`），这更符合您原始设计中通过开关选择寄存器的意图。
-//     * `sw_i` 本身被定义为一个固定的 `wire`，在基础仿真中，我们让它保持为0。
-// ### 下一步
-
-// 现在，您已经拥有了所有进行仿真所需的文件：
-// 1.  您所有的CPU源文件，包括 `sccomp.v`、`PipelineCPU.v`、`dm.v` 等。
-// 2.  修改后用于仿真的 `sccomp.v`。
-// 3.  行为级ROM模型 `instruction_memory.v`。
-// 4.  这个最终版的测试平台 `sccomp_rom_testbench.v`。
-// 5.  包含机器码的 `instructions.txt` 文件。
