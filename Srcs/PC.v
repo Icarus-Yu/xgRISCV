@@ -1,3 +1,5 @@
+
+//程序计数器 决定并保存下一条要执行的指令地址
 `include "ctrl_encode_def.v"
 
 module PC_NPC(
@@ -17,10 +19,10 @@ module PC_NPC(
 
   always @(*) begin
     case (NPCOp)
-      `NPC_PLUS4:  next_PC = PCPLUS4;
+      `NPC_PLUS4:  next_PC = PCPLUS4;//正常执行，地址加4
       `NPC_BRANCH: next_PC = base_PC + IMM;
-      `NPC_JUMP:   next_PC = base_PC + IMM;
-      `NPC_JALR:   next_PC = aluout;
+      `NPC_JUMP:   next_PC = base_PC + IMM;//发生分支或跳转，加上立即数偏移
+      `NPC_JALR:   next_PC = aluout; // JALR指令，跳转到寄存器指定的地址
       default:     next_PC = PCPLUS4;
     endcase
   end
@@ -33,7 +35,7 @@ module PC_NPC(
       PC <= next_PC;
     else
       PC <= PC;
-  end
+  end//寄存器逻辑 PC
 
 endmodule
 

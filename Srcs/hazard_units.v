@@ -38,6 +38,9 @@ module HazardDetectionUnit(
         // Load-Use冒险检测逻辑
         // 当EX阶段是Load指令且目标寄存器与ID阶段的源寄存器相同时会发生冒险
         // 此处处理的是Load与接下来第一条指令的冒险
+        //当EX阶段是一条 load 指令(MemRead_EX)，
+        //并且它要写入的目标寄存器rd_EX正好是ID阶段指令需要读取的源寄存器rs1_ID或rs2_ID时：
+        // 需要暂停IF阶段，冲刷ID阶段，并在EX阶段插入一个气泡 (NOP)
         if (MemRead_EX &&
             ((rd_EX == rs1_ID && rs1_ID != 5'b0) ||    // EX阶段目标寄存器与ID阶段rs1相同
              (rd_EX == rs2_ID && rs2_ID != 5'b0))) begin // EX阶段目标寄存器与ID阶段rs2相同
@@ -45,10 +48,10 @@ module HazardDetectionUnit(
             flush_ID = 1'b0;  // ID阶段不需要冲刷，stall会使其保持
             flush_EX = 1'b1;  // 向EX阶段插入一个气泡 (NOP)
         end
-        // JALR优先级最高
+        // JALR优先级最高，jalr和branch在ex阶段才能确定最终的跳转地址
         else if (opcode_EX == `OPCODE_JALR) begin
             stall_IF = 1'b0;
-            flush_ID = 1'b1;
+            flush_ID = 1'b1;//将ID阶段冲刷掉，从而废除被错误取入的指令
             flush_EX = 1'b0;
         end
         // Branch次之
@@ -92,6 +95,8 @@ endmodule
 
 // 转发单元 - 实现数据转发以解决数据冒险
 // 该模块检测数据依赖并生成转发控制信号，将最新数据转发到EX阶段和ID阶段
+//当一条指令的计算结果还在MEM或WB阶段“漂流”，尚未写回寄存器堆时，如果后续指令恰好需要这个结果。
+//可以直接把这个结果从MEM或WB阶段“抄近路”送回（转发）给EX阶段的ALU输入端。
 module ForwardingUnit(
     input [4:0] rs1_EX, rs2_EX,    // EX阶段的源寄存器地址
     input [4:0] rs1_ID, rs2_ID,    // ID阶段的源寄存器地址

@@ -1,19 +1,21 @@
+//此代码的作用是控制单元，解析指令来生成控制信号
+
 `include "ctrl_encode_def.v"
 
-module ctrl(input  [6:0] Op,       // opcode
+module ctrl(input  [6:0] Op,       // opcode操作码
             input  [6:0] Funct7,    // funct7
             input  [2:0] Funct3,    // funct3
-            
-            output       RegWrite, // control signal for register write
-            output       MemWrite, // control signal for memory write
-            output       MemRead,  // control signal for memory read
-            output [5:0] EXTOp,    // control signal to signed extension
-            output [4:0] ALUOp,    // ALU opertion
-            output       ALUSrc,   // ALU source for A
-            output [2:0] DMType,   // Data memory access type
-            output [1:0] WDSel    // (register) write data selection
+
+            output       RegWrite, // control signal for register write寄存器写使能
+            output       MemWrite, // control signal for memory write内存写使能
+            output       MemRead,  // control signal for memory read内存读使能
+            output [5:0] EXTOp,    // control signal to signed extension立即数扩展
+            output [4:0] ALUOp,    // ALU opertion 选择使用哪种运算
+            output       ALUSrc,   // ALU source for A决定ALU的输入来自寄存器还是立即数
+            output [2:0] DMType,   // Data memory access type数据内存的访问类型
+            output [1:0] WDSel    // (register) write data selection数据i写回的选择的，来源有寄存器的运算，内存读取，PC+4等
             );
-            
+
    // ------------------------------------------------------------
    // Instruction type encoding begins
    // Instruction type detection
@@ -26,7 +28,7 @@ module ctrl(input  [6:0] Op,       // opcode
    wire store    = (Op == `OPCODE_STORE);
    wire op_imm   = (Op == `OPCODE_OP_IMM);
    wire op       = (Op == `OPCODE_OP);
-   
+
    // Branch instructions
    wire beq      = branch & (Funct3 == `FUNCT3_BEQ);
    wire bne      = branch & (Funct3 == `FUNCT3_BNE);
@@ -34,19 +36,19 @@ module ctrl(input  [6:0] Op,       // opcode
    wire bge      = branch & (Funct3 == `FUNCT3_BGE);
    wire bltu     = branch & (Funct3 == `FUNCT3_BLTU);
    wire bgeu     = branch & (Funct3 == `FUNCT3_BGEU);
-   
+
    // Load instructions
    wire lb       = load & (Funct3 == `FUNCT3_LB);
    wire lh       = load & (Funct3 == `FUNCT3_LH);
    wire lw       = load & (Funct3 == `FUNCT3_LW);
    wire lbu      = load & (Funct3 == `FUNCT3_LBU);
    wire lhu      = load & (Funct3 == `FUNCT3_LHU);
-   
+
    // Store instructions
    wire sb       = store & (Funct3 == `FUNCT3_SB);
    wire sh       = store & (Funct3 == `FUNCT3_SH);
    wire sw       = store & (Funct3 == `FUNCT3_SW);
-   
+
    // Immediate arithmetic/logical instructions
    wire addi     = op_imm & (Funct3 == `FUNCT3_ADDI);
    wire slti     = op_imm & (Funct3 == `FUNCT3_SLTI);
@@ -57,7 +59,7 @@ module ctrl(input  [6:0] Op,       // opcode
    wire slli     = op_imm & (Funct3 == `FUNCT3_SLLI);
    wire srli     = op_imm & (Funct3 == `FUNCT3_SRLI) & (Funct7 == `FUNCT7_SRL);
    wire srai     = op_imm & (Funct3 == `FUNCT3_SRAI) & (Funct7 == `FUNCT7_SRA);
-   
+
    // Register arithmetic/logical instructions
    wire add      = op & (Funct3 == `FUNCT3_ADD) & (Funct7 == `FUNCT7_ADD);
    wire sub      = op & (Funct3 == `FUNCT3_SUB) & (Funct7 == `FUNCT7_SUB);
@@ -69,10 +71,10 @@ module ctrl(input  [6:0] Op,       // opcode
    wire sra      = op & (Funct3 == `FUNCT3_SRA) & (Funct7 == `FUNCT7_SRA);
    wire or_op    = op & (Funct3 == `FUNCT3_OR);
    wire and_op   = op & (Funct3 == `FUNCT3_AND);
-   
+
    // instruction type encoding ends
    // ------------------------------------------------------------
-   
+
 
    // ------------------------------------------------------------
    // Control signals generation begins
@@ -81,7 +83,7 @@ module ctrl(input  [6:0] Op,       // opcode
    assign MemWrite = store;
    assign MemRead = load;
    assign ALUSrc = auipc | jal | jalr | load | store | addi | slti | sltiu | xori | ori | andi | slli | srli | srai;
-   
+
    // Signed extension control
    assign EXTOp[5] = slli | srli | srai;  // ITYPE_SHAMT
    assign EXTOp[4] = addi | slti | sltiu | xori | ori | andi | jalr;  // ITYPE
@@ -89,12 +91,12 @@ module ctrl(input  [6:0] Op,       // opcode
    assign EXTOp[2] = branch;  // BTYPE
    assign EXTOp[1] = lui | auipc;  // UTYPE
    assign EXTOp[0] = jal;  // JTYPE
-   
+
    // Write data selection
    assign WDSel[1] = jal | jalr;
    assign WDSel[0] = load;
-   
-   
+
+
    // ALU operation encoding
    assign ALUOp = (beq) ? `ALU_BEQ :
                 (bne) ? `ALU_BNE :

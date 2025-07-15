@@ -1,5 +1,9 @@
 // Pipeline registers for 5-stage pipeline CPU
 // IF/ID register
+//实现五级流水器的IF/ID寄存器
+
+//IF_ID_Reg (取指/译码)寄存器
+//传递从内存中取出的 指令码 (instr_in) 和该指令的 地址 (PC_in)
 module IF_ID_Reg(
     input clk,
     input rst,
@@ -27,6 +31,8 @@ module IF_ID_Reg(
 endmodule
 
 // ID/EX register
+//译码，执行
+//从寄存器堆读出的 操作数 (rs1_data_in, rs2_data_in)。生成的 立即数 (imm_in)。控制单元生成的所有 控制信号 (RegWrite_in, ALUOp_in 等)。
 module ID_EX_Reg(
     input clk,
     input rst,
@@ -103,10 +109,15 @@ module ID_EX_Reg(
 endmodule
 
 // EX/MEM register
+//执行，存储器访问
+//传递执行阶段的结果：
+// ALU的计算结果 (alu_result_in)，这可能是地址或数据。
+// 用于store指令的 rs2数据 (rs2_data_in)。
+// 需要继续向后传递的 控制信号 (RegWrite_in, MemWrite_in 等)。
 module EX_MEM_Reg(
     input clk,
     input rst,
-    
+
     input [31:0] alu_result_in,
     input [31:0] rs2_data_in,
     input [31:0] instr_in,
@@ -153,6 +164,8 @@ module EX_MEM_Reg(
 endmodule
 
 // MEM/WB register
+//存储器访问，写回
+//传递存储器访问阶段的结果：
 module MEM_WB_Reg(
     input clk,
     input rst,
@@ -187,4 +200,4 @@ module MEM_WB_Reg(
             PC_out <= PC_in;
         end
     end
-endmodule 
+endmodule

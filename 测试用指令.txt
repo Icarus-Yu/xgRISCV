@@ -4,42 +4,123 @@ iverilog -o my_sim.out -I Srcs Test/sccomp_rom_testbench.v Srcs/*.v
 vvp my_sim.out
 //生成波形文件
 gtkwave waveform.vcd
-clk
 
-时钟信号：整个电路的“心跳”，所有同步逻辑都在它的边沿触发。
 
-PC_out[31:0]
+//流水线指令追踪
+$dumpvars(1, uut.U_PipelineCPU.PC_IF);
+$dumpvars(1, uut.instr);
+$dumpvars(1, uut.U_PipelineCPU.if_id_reg.instr_out);
+$dumpvars(1, uut.U_PipelineCPU.id_ex_reg.instr_out);
+$dumpvars(1, uut.U_PipelineCPU.ex_mem_reg.instr_out);
+PC_IF: 当前正在**取指（IF）**阶段的PC地址。
 
-程序计数器输出：这是sccomp模块最终输出的PC值，通常与PC_IF同步，表示当前正在取指的指令地址。
+uut.instr: 正在从指令存储器中读出的指令码。
 
-instr_out[31:0]
+if_id_reg.instr_out: 已经进入**译码（ID）**阶段的指令码。
 
-指令输出：从指令存储器中读出的32位指令机器码。
+id_ex_reg.instr_out: 已经进入**执行（EX）**阶段的指令码。
 
-flush_EX
+ex_mem_reg.instr_out: 已经进入**访存（MEM）**阶段的指令码。
 
-EX阶段冲刷信号：当为1时，表示因控制冒险（如分支跳转），需要将进入EX阶段的指令作废（变成nop）。
 
-flush_ID
+//写回阶段五要素
+$dumpvars(1, uut.U_PipelineCPU.mem_wb_reg.PC_out);
+$dumpvars(1, uut.U_PipelineCPU.mem_wb_reg.instr_out);
+$dumpvars(1, uut.U_PipelineCPU.RegWrite_WB);
+$dumpvars(1, uut.U_PipelineCPU.rd_addr_WB);
+$dumpvars(1, uut.U_PipelineCPU.wb_data_WB);
+这是验证CPU是否正确的最终检查点。当一条指令走完整个流水线到达**写回（WB）**阶段时，这五个信号可以告诉你关于这条指令的一切：
 
-ID阶段冲刷信号：当为1时，表示因控制冒险，需要将进入ID阶段的指令作废。
+PC_out: 这条指令最初的PC地址是什么？
 
-stall_IF
+instr_out: 这条指令的指令码是什么？
 
-IF阶段停顿信号：当为1时，表示因Load-Use数据冒险，需要暂停取指，让流水线停顿一个周期。
+RegWrite_WB: 它需要写回寄存器吗？（1代表需要）
 
-PC_IF[31:0]
+rd_addr_WB: 如果要写，目标寄存器的地址是哪个？
 
-取指阶段的PC：明确表示当前正在取指的地址，是追踪程序流程的起点。
+wb_data_WB: 准备写入的数据是什么？
 
-RegWrite_WB
+//冒险控制信号
+$dumpvars(1, uut.U_PipelineCPU.hazard_detection_unit.stall_IF);
+$dumpvars(1, uut.U_PipelineCPU.hazard_detection_unit.flush_ID);
+$dumpvars(1, uut.U_PipelineCPU.hazard_detection_unit.flush_EX);
+这三个信号是调试冒险处理逻辑的关键。当你的程序运行不符合预期时，检查这几个信号可以告诉你：
 
-写回阶段的写使能：当为1时，表示当前在WB阶段的指令需要向寄存器堆写入一个值。这是验证写操作是否发生的关键。
+stall_IF: 流水线是否因为Load-Use冒险而暂停了？
 
-rd_addr_WB[4:0]
+flush_ID / flush_EX: 流水线是否因为分支跳转或其它原因而冲刷（插入气泡）了指令？
+好的，我们来分析激动人心的第三部分。
 
-写回阶段的目标寄存器地址：表示当前写操作的目标是哪个寄存器（x0到x31）。
+这部分代码引入了控制流指令（beq, jal），这意味着我们将首次看到控制冒险 (Control Hazard) 以及您的 HazardDetectionUnit 是如何处理它们的。
 
-wb_data_WB[31:0]
+分析范围：从 PC=0x40 到 PC=0x78 的指令。
 
-写回阶段的数据：表示最终准备写入寄存器的32位数据值。
+
+第一阶段：为分支指令准备数据
+从 0x40 到 0x4c 的四条指令主要是为后续的 beq 指令准备操作数，它们本身不涉及新的流水线知识，主要依赖之前已经验证过的数据转发。执行完毕后，相关的寄存器状态为：
+
+x5 = 240 (0xF0)
+
+x12 = 0
+
+x13 = 1
+
+x3 = 1
+
+第二阶段：条件分支 beq 与预测
+1. 0x50: beq x3, x11, 44 - 分支不成立
+功能: 比较 x3 和 x11 的值。如果相等，则跳转到 PC + 44 (0x50 + 0x2c = 0x7c)。
+
+流水线行为:
+
+ID阶段: 指令被译码为 beq。CPU从寄存器堆读取 x3 的值（1）和 x11 的值（在第二部分中已设为 8）。
+
+预测: 此时，CPU不知道分支是否会成功。它采用最简单的策略：预测分支不成立 (Predict Not Taken)。因此，它会继续到 0x54 去取下一条指令。
+
+EX阶段: beq 指令进入执行阶段。ALU对操作数进行比较（实际上是做减法 1 - 8）。结果不为零，因此 Zero_EX 标志位为0。branch_taken_EX 信号被判断为 0（分支不跳转）。
+
+结果: 预测正确！ 因为分支确实没有发生，所以先前在 0x54 取到的指令是完全正确的。流水线不需要任何冲刷（Flush）或暂停（Stall），继续顺畅地执行。
+
+2. 0x64: beq x14, x0, 12 - 再次分支不成立
+在执行这条指令前，0x60 处的 slt x14, x13, x8 已经计算出 x14 的值为 1（因为 x13=1, x8=14）。
+
+功能: 比较 x14 (1) 和 x0 (0)。
+
+流水线行为: 与上一个 beq 完全相同。ALU在EX阶段判断出两者不相等，分支不成立。由于CPU同样预测不成立，所以流水线再次顺畅执行，没有产生任何气泡。
+
+这两条 beq 指令展示了当分支预测正确时，流水线可以达到最高效率。
+
+第三阶段：无条件跳转 jal 与流水线冲刷
+这是本部分的重头戏，我们将看到控制冒险是如何被实实在在处理的。
+
+0x78: jal x0, -40
+
+功能: 无条件跳转到 PC - 40 (0x78 - 0x28 = 0x50)。这形成了一个返回到第一次 beq 指令的循环。x0 作为目标寄存器，意味着我们不关心返回地址。
+
+流水线行为:
+
+IF阶段: jal 指令在 PC=0x78 处被取出。与此同时，PC更新为 0x7c，准备取下一条指令。
+
+ID阶段: jal 指令进入译码阶段。
+
+控制冒险发生: HazardDetectionUnit 立刻识别出这是一条 jal 指令，意味着控制流必定会改变。而此时，位于 0x7c 的指令（slt x14, x2, x12）已经被错误地取入了IF阶段。
+
+冒险单元发出指令:
+
+flush_ID = 1：命令 IF/ID 寄存器在下一个时钟周期被清空（载入一个NOP指令）。
+
+NPCOp_out = NPC_JUMP：命令 PC_NPC 单元准备执行一次跳转。
+
+NPCImm_out = -40, base_PC_out = 0x78：提供跳转所需的偏移量和基地址。
+
+下一个时钟周期:
+
+PC更新: PC_NPC 单元根据收到的命令，计算出新的PC地址为 0x50。
+
+流水线冲刷: IF/ID 寄存器响flush_ID信号，将刚刚从 0x7c 读入的 slt 指令清除，替换为一个气泡（NOP）。
+
+新的取指: CPU在新的PC地址 0x50 处，重新取指，取回了 beq x3, x11, 44 指令。
+
+结果: CPU成功地跳转回了 0x50。但是，为了纠正这个错误的预测，浪费了一个时钟周期去取指令然后又把它丢弃。这个被浪费的周期，就是我们常说的分支惩罚 (Branch Penalty)，在这里是1个周期。
+

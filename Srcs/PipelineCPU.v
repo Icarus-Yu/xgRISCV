@@ -20,7 +20,7 @@ module PipelineCPU(
     // Control signals wire preparation begins
     // IF stage signals
     wire [31:0] PC_IF;      // 输出PC值
-    
+
     // ID stage signals
     // 长连接
     wire [31:0] instr_ID;   // 输出指令值，表示此阶段正在执行的指令
@@ -37,7 +37,7 @@ module PipelineCPU(
     wire ALUSrc_ID; // 输出ALU源选择信号
     wire [1:0] WDSel_ID; // 输出写数据选择信号
     wire [2:0] DMType_ID; // 输出数据类型
-    
+
     // EX stage signals
     // 长连接
     wire [31:0] instr_EX; // 输出指令值
@@ -55,7 +55,7 @@ module PipelineCPU(
     wire [2:0] DMType_EX; // 输出数据类型
     wire [31:0] alu_result_EX, alu_B_EX; // 输出ALU结果
     wire Zero_EX, Sign_EX, Overflow_EX, Carry_EX; // 输出标志信号
-    
+
     // MEM stage signals
     // 长连接
     wire [31:0] instr_MEM; // 输出指令值
@@ -70,7 +70,7 @@ module PipelineCPU(
     wire MemRead_MEM; // 输出内存读使能信号
     wire [1:0] WDSel_MEM; // 输出写数据选择信号
     wire [2:0] DMType_MEM; // 输出数据类型
-    
+
     // WB stage signals
     // 长连接
     wire [31:0] instr_WB; // 输出指令值
@@ -82,7 +82,7 @@ module PipelineCPU(
     // 控制信号短连接
     wire RegWrite_WB; // 输出寄存器写使能信号
     wire [1:0] WDSel_WB; // 输出写数据选择信号
-    
+
 
     // Control signals wire preparation ends
     // ----------------------------------------------------------------
@@ -100,7 +100,7 @@ module PipelineCPU(
     assign funct3_ID = instr_ID[14:12];
     assign rs1_ID = instr_ID[19:15];
     assign rs2_ID = instr_ID[24:20];
-    
+
     // Immediate extraction
     wire [4:0] iimm_shamt_ID;
     wire [11:0] iimm_ID, simm_ID, bimm_ID;
@@ -140,7 +140,7 @@ module PipelineCPU(
     assign wb_data_WB = (WDSel_WB == `WDSel_FromALU) ? alu_result_WB :
                         (WDSel_WB == `WDSel_FromMEM) ? mem_data_WB :
                         (WDSel_WB == `WDSel_FromPC) ? (PC_WB + 4) : alu_result_WB;
-    
+
     // EX阶段的分支判断逻辑 - 基于ALU标志位
 
     assign branch_taken_EX = (opcode_EX == `OPCODE_BRANCH) && (
@@ -151,13 +151,13 @@ module PipelineCPU(
         (funct3_EX == `FUNCT3_BLTU && Carry_EX) ||                  // bltu: 无符号小于时跳转
         (funct3_EX == `FUNCT3_BGEU && !Carry_EX)                    // bgeu: 无符号大于等于时跳转
     );
-    
+
 
 
     // ID阶段前递逻辑 - 从WB阶段前递数据到ID阶段
     assign rs1_data_forwarded_ID = forward_rs1_ID ? wb_data_WB :  // 从WB阶段前递
                                    rs1_data_ID;                  // 不使用前递
-    
+
     assign rs2_data_forwarded_ID = forward_rs2_ID ? wb_data_WB :  // 从WB阶段前递
                                    rs2_data_ID;                  // 不使用前递
 
@@ -171,11 +171,11 @@ module PipelineCPU(
     assign rs1_data_forwarded_EX = (forward_rs1_EX == 2'b01) ? alu_result_MEM :  // 从MEM阶段前递
                                    (forward_rs1_EX == 2'b10) ? wb_data_WB :       // 从WB阶段前递
                                    rs1_data_EX;                                // 不使用前递
-    
+
     assign rs2_data_forwarded_EX = (forward_rs2_EX == 2'b01) ? alu_result_MEM :  // 从MEM阶段前递
                                    (forward_rs2_EX == 2'b10) ? wb_data_WB :       // 从WB阶段前递
                                    rs2_data_EX;                                // 不使用前递
-    
+
     // ALU B operand selection
     assign alu_B_EX = ALUSrc_EX ? imm_EX : rs2_data_forwarded_EX;
 
@@ -202,18 +202,18 @@ module PipelineCPU(
     // IF/ID pipeline register instantiation begins
     // IF/ID pipeline register - 使用冒险检测信号
     IF_ID_Reg if_id_reg(
-        .clk(clk), 
-        .rst(rst), 
+        .clk(clk),
+        .rst(rst),
         .flush(flush_ID),  // 支持IF和ID阶段的flush
         .stall(stall_IF),
-        .PC_in(PC_IF), 
+        .PC_in(PC_IF),
         .instr_in(instr_in),
-        .PC_out(PC_ID), 
+        .PC_out(PC_ID),
         .instr_out(instr_ID)
     );
     // IF/ID pipeline register instantiation ends
     // ----------------------------------------------------------------
-    
+
 
 
     // ----------------------------------------------------------------
@@ -251,48 +251,48 @@ module PipelineCPU(
     // ----------------------------------------------------------------
     // ID Stage Hardware instantiation begins
     ctrl ctrl_unit(
-        .Op(opcode_ID), 
-        .Funct7(funct7_ID), 
-        .Funct3(funct3_ID), 
-        .RegWrite(RegWrite_ID), 
-        .MemWrite(MemWrite_ID), 
+        .Op(opcode_ID),
+        .Funct7(funct7_ID),
+        .Funct3(funct3_ID),
+        .RegWrite(RegWrite_ID),
+        .MemWrite(MemWrite_ID),
         .MemRead(MemRead_ID),
-        .EXTOp(EXTOp_ID), 
-        .ALUOp(ALUOp_ID), 
-        .ALUSrc(ALUSrc_ID), 
-        .WDSel(WDSel_ID), 
+        .EXTOp(EXTOp_ID),
+        .ALUOp(ALUOp_ID),
+        .ALUSrc(ALUSrc_ID),
+        .WDSel(WDSel_ID),
         .DMType(DMType_ID)
     );
-    
+
     EXT ext_unit(
-        .iimm_shamt(iimm_shamt_ID), 
-        .iimm(iimm_ID), 
-        .simm(simm_ID), 
+        .iimm_shamt(iimm_shamt_ID),
+        .iimm(iimm_ID),
+        .simm(simm_ID),
         .bimm(bimm_ID),
-        .uimm(uimm_ID), 
+        .uimm(uimm_ID),
         .jimm(jimm_ID),
-        .EXTOp(EXTOp_ID), 
+        .EXTOp(EXTOp_ID),
         .immout(imm_ID)
     );
-    
+
     RF rf_unit(
-        .clk(clk), 
-        .rst(rst), 
+        .clk(clk),
+        .rst(rst),
         .RFWr(RegWrite_WB),
-        .A1(rs1_ID), 
-        .A2(rs2_ID), 
+        .A1(rs1_ID),
+        .A2(rs2_ID),
         .A3(rd_addr_WB),
-        .WD(wb_data_WB), 
-        .RD1(rs1_data_ID), 
+        .WD(wb_data_WB),
+        .RD1(rs1_data_ID),
         .RD2(rs2_data_ID),
         .reg_sel(reg_sel),
         .reg_data(reg_data)
     );
-    
+
 
     // ID Stage Hardware instantiation ends
     // ----------------------------------------------------------------
-    
+
 
 
     // ----------------------------------------------------------------
@@ -328,7 +328,7 @@ module PipelineCPU(
     );
     // ID/EX pipeline register instantiation ends
     // ----------------------------------------------------------------
-    
+
 
 
     // ----------------------------------------------------------------
@@ -348,15 +348,15 @@ module PipelineCPU(
         .forward_rs1_ID(forward_rs1_ID),
         .forward_rs2_ID(forward_rs2_ID)
     );
-    
+
 
 
     alu alu_unit(
-        .A(rs1_data_forwarded_EX), 
-        .B(alu_B_EX), 
+        .A(rs1_data_forwarded_EX),
+        .B(alu_B_EX),
         .ALUOp(ALUOp_EX),
-        .C(alu_result_EX), 
-        .Zero(Zero_EX), 
+        .C(alu_result_EX),
+        .Zero(Zero_EX),
         .PC(PC_EX),
         .Sign(Sign_EX),
         .Overflow(Overflow_EX),
@@ -364,33 +364,33 @@ module PipelineCPU(
     );
     // EXE Stage Hardware instantiation ends
     // ----------------------------------------------------------------
-    
+
 
 
     // ----------------------------------------------------------------
     // EX/MEM pipeline register instantiation begins
     EX_MEM_Reg ex_mem_reg(
-        .clk(clk), 
-        .rst(rst), 
-        
-        .alu_result_in(alu_result_EX), 
-        .rs2_data_in(rs2_data_forwarded_EX), 
+        .clk(clk),
+        .rst(rst),
+
+        .alu_result_in(alu_result_EX),
+        .rs2_data_in(rs2_data_forwarded_EX),
         .instr_in(instr_EX),
-        .RegWrite_in(RegWrite_EX), 
-        .MemWrite_in(MemWrite_EX), 
+        .RegWrite_in(RegWrite_EX),
+        .MemWrite_in(MemWrite_EX),
         .MemRead_in(MemRead_EX),
-        .WDSel_in(WDSel_EX), 
-        .DMType_in(DMType_EX), 
+        .WDSel_in(WDSel_EX),
+        .DMType_in(DMType_EX),
         .PC_in(PC_EX),
 
-        .alu_result_out(alu_result_MEM), 
-        .rs2_data_out(rs2_data_MEM), 
+        .alu_result_out(alu_result_MEM),
+        .rs2_data_out(rs2_data_MEM),
         .instr_out(instr_MEM),
-        .RegWrite_out(RegWrite_MEM), 
-        .MemWrite_out(MemWrite_MEM), 
+        .RegWrite_out(RegWrite_MEM),
+        .MemWrite_out(MemWrite_MEM),
         .MemRead_out(MemRead_MEM),
-        .WDSel_out(WDSel_MEM), 
-        .DMType_out(DMType_MEM), 
+        .WDSel_out(WDSel_MEM),
+        .DMType_out(DMType_MEM),
         .PC_out(PC_MEM)
     );
     // EX/MEM pipeline register instantiation ends
@@ -402,27 +402,27 @@ module PipelineCPU(
     // ----------------------------------------------------------------
     // MEM stage Hardware instantiation begins
     assign mem_data_MEM = Data_in;
-    
+
     // MEM/WB pipeline register
     MEM_WB_Reg mem_wb_reg(
-        .clk(clk), 
-        .rst(rst), 
+        .clk(clk),
+        .rst(rst),
 
-        .alu_result_in(alu_result_MEM), 
-        .mem_data_in(mem_data_MEM), 
+        .alu_result_in(alu_result_MEM),
+        .mem_data_in(mem_data_MEM),
         .instr_in(instr_MEM),
-        .RegWrite_in(RegWrite_MEM), 
-        .WDSel_in(WDSel_MEM), 
+        .RegWrite_in(RegWrite_MEM),
+        .WDSel_in(WDSel_MEM),
         .PC_in(PC_MEM),
 
-        .alu_result_out(alu_result_WB), 
-        .mem_data_out(mem_data_WB), 
+        .alu_result_out(alu_result_WB),
+        .mem_data_out(mem_data_WB),
         .instr_out(instr_WB),
-        .RegWrite_out(RegWrite_WB), 
-        .WDSel_out(WDSel_WB), 
+        .RegWrite_out(RegWrite_WB),
+        .WDSel_out(WDSel_WB),
         .PC_out(PC_WB)
     );
-    
+
     // MEM stage Hardware instantiation ends
     // ----------------------------------------------------------------
 
